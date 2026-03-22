@@ -104,7 +104,7 @@ main.py
 requirements.txt
 web/
   ├── src/
-  ├── dist/        # generated after build
+  ├── dist/       
   └── package.json
 ```
 
@@ -116,7 +116,3 @@ web/
 * The frontend provides the UI and user interaction
 * The `/assistant` route is the main AI interface
 
-```
-
-You can paste this directly into your `README.md` file and it will render cleanly on GitHub.
-```
