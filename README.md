@@ -114,13 +114,15 @@ Check the correct port in terminal
 Do not assume it is always 8000
 
 ### Project structure
+```
 main.py
 requirements.txt
 web/
   ├── src/
   ├── dist/
   └── package.json
-  
+```
+
 ### Notes
 Backend handles AI, booking, and execution logic
 
