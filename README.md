@@ -51,6 +51,8 @@ PORT=8000
 SMARTDINE_OPEN_BROWSER=0
 UVICORN_RELOAD=1
 SMARTDINE_PAUSE_ON_ERROR=0
+```
+
 Notes
 Do not commit your .env file
 Add .env to .gitignore
