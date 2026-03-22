@@ -1,0 +1,21 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-sage-100 text-ink font-sans;
+  }
+}
+
+@layer utilities {
+  .glass-panel {
+    @apply bg-white/55 backdrop-blur-xl border border-white/70 shadow-glass;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+}

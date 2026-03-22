@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>DineSmartAI — Dining concierge</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600&display=swap" rel="stylesheet" />
+  <style>
+    /* Aligned with marketing site (web): sage, blush, ink, taupe — DM Sans + Fraunces */
+    :root {
+      --bg: #e8f2ec;
+      --surface: rgba(255, 255, 255, 0.72);
+      --surface2: rgba(255, 255, 255, 0.88);
+      --text: #1a2e28;
+      --muted: #6b756f;
+      --accent: #417459;
+      --accent-2: #ec7a94;
+      --accent-dim: #365d49;
+      --user-bubble: rgba(255, 255, 255, 0.92);
+      --bot-bubble: rgba(255, 255, 255, 0.78);
+      --success: #417459;
+      --radius: 16px;
+      --font: "DM Sans", system-ui, sans-serif;
+      --font-display: "Fraunces", Georgia, serif;
+      --shadow-soft: 0 4px 24px -4px rgba(26, 46, 40, 0.08), 0 12px 48px -12px rgba(26, 46, 40, 0.12);
+      --ring: rgba(255, 255, 255, 0.7);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      min-height: 100dvh;
+      background-image:
+        radial-gradient(ellipse 100% 80% at 50% -30%, rgba(244, 168, 184, 0.18), transparent),
+        radial-gradient(ellipse 70% 50% at 100% 0%, rgba(168, 205, 184, 0.35), transparent),
+        radial-gradient(ellipse 60% 40% at 0% 100%, rgba(209, 228, 217, 0.6), transparent);
+    }
+    header {
+      flex-shrink: 0;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      backdrop-filter: blur(16px);
+      background: rgba(255, 255, 255, 0.55);
+      box-shadow: 0 1px 0 rgba(26, 46, 40, 0.04);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+    .brand-mark {
+      width: 38px; height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f4a8b8, #ec7a94);
+      display: grid;
+      place-items: center;
+      font-size: 1.15rem;
+      box-shadow: var(--shadow-soft);
+    }
+    .brand h1 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .brand p { font-size: 0.8rem; color: var(--muted); margin-top: 0.1rem; font-weight: 500; }
+    .loc-pill {
+      font-size: 0.72rem;
+      color: var(--muted);
+      max-width: 200px;
+      text-align: right;
+      line-height: 1.35;
+    }
+    .loc-pill strong { color: var(--accent); font-weight: 600; }
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      max-width: 720px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 92%;
+      animation: fadeIn 0.35s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .msg.user { align-self: flex-end; }
+    .msg.bot { align-self: flex-start; }
+    .bubble {
+      padding: 0.85rem 1.1rem;
+      border-radius: var(--radius);
+      line-height: 1.55;
+      font-size: 0.95rem;
+    }
+    .msg.user .bubble {
+      background: var(--user-bubble);
+      border-bottom-right-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: var(--shadow-soft);
+      color: var(--text);
+    }
+    .msg.bot .bubble {
+      background: var(--bot-bubble);
+      border: 1px solid var(--ring);
+      border-bottom-left-radius: 6px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow-soft);
+      color: var(--text);
+    }
+    .msg .label {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+      padding-left: 0.2rem;
+    }
+    .msg.user .label { text-align: right; padding-right: 0.2rem; }
+    .typing .bubble {
+      display: flex;
+      gap: 5px;
+      padding: 1rem 1.2rem;
+    }
+    .typing span {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: bounce 1.2s ease infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.15s; }
+    .typing span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+    .rec-block { display: flex; flex-direction: column; gap: 0.85rem; margin-top: 0.35rem; }
+    .rec-card {
+      margin-top: 0;
+      padding: 1rem;
+      background: var(--surface2);
+      border-radius: 16px;
+      border: 1px solid rgba(168, 205, 184, 0.65);
+      box-shadow: var(--shadow-soft);
+    }
+    .rec-card-alt { border-color: rgba(255, 255, 255, 0.85); }
+    .rec-role {
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--accent-2);
+      margin-bottom: 0.25rem;
+      font-weight: 600;
+    }
+    .rec-structured {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 0.65rem 0;
+      font-size: 0.88rem;
+      line-height: 1.45;
+    }
+    .rec-structured li { margin: 0.4rem 0; }
+    .rec-k {
+      color: var(--muted);
+      display: inline-block;
+      min-width: 7.75rem;
+      font-weight: 500;
+    }
+    .rec-next-hint { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; line-height: 1.4; }
+    .rec-card h3 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      color: var(--accent);
+      margin-bottom: 0.35rem;
+    }
+    .rec-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 0.65rem;
+    }
+    .rec-why { font-size: 0.9rem; margin-bottom: 0.75rem; }
+    .rec-loc-cluster { font-size: 0.82rem; color: var(--muted); margin: 0.45rem 0; font-style: italic; }
+    .rec-highlights { margin: 0.35rem 0 0.75rem 1rem; font-size: 0.88rem; list-style: disc; }
+    .rec-highlights li { margin: 0.15rem 0; }
+    .rec-dish-note { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.75rem; padding: 0.5rem 0.65rem; border-left: 3px solid var(--accent-2); }
+    .rec-hours-li { align-items: flex-start; }
+    .rec-hours { display: block; font-size: 0.82rem; color: var(--text); line-height: 1.45; margin-top: 0.2rem; }
+    .rec-hour-line { display: inline-block; width: 100%; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    .actions a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+      background: rgba(65, 116, 89, 0.12);
+      color: var(--accent);
+      border: 1px solid rgba(65, 116, 89, 0.35);
+    }
+    .actions a:hover { background: rgba(65, 116, 89, 0.18); }
+    .actions .action-suggest {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(236, 122, 148, 0.14);
+      color: var(--text);
+      border: 1px solid rgba(236, 122, 148, 0.4);
+    }
+    .actions .action-suggest:hover { background: rgba(236, 122, 148, 0.22); }
+    .backup {
+      margin-top: 0.85rem;
+      padding-top: 0.85rem;
+      border-top: 1px solid rgba(26, 46, 40, 0.08);
+      font-size: 0.85rem;
+    }
+    .backup h4 { color: var(--muted); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.5rem; }
+    .backup-item { margin: 0.4rem 0; color: var(--text); }
+    footer.input-bar {
+      flex-shrink: 0;
+      padding: 0.85rem 1.25rem 1.25rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.7);
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 -4px 24px -8px rgba(26, 46, 40, 0.06);
+    }
+    .input-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-end;
+    }
+    #user-input {
+      flex: 1;
+      min-height: 48px;
+      max-height: 140px;
+      resize: none;
+      border-radius: 999px;
+      border: 1px solid rgba(168, 205, 184, 0.85);
+      background: rgba(255, 255, 255, 0.92);
+      color: var(--text);
+      padding: 0.85rem 1.15rem;
+      font-family: inherit;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      box-shadow: var(--shadow-soft);
+    }
+    #user-input:focus {
+      outline: none;
+      border-color: rgba(236, 122, 148, 0.65);
+      box-shadow: 0 0 0 3px rgba(244, 168, 184, 0.35);
+    }
+    #send {
+      height: 48px;
+      padding: 0 1.35rem;
+      border: none;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      background: linear-gradient(90deg, #f4a8b8, #ec7a94);
+      color: #fff;
+      font-family: inherit;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      box-shadow: var(--shadow-soft);
+    }
+    #send:hover:not(:disabled) { filter: brightness(1.08); transform: scale(1.02); }
+    #send:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .footer-links {
+      text-align: center;
+      margin-top: 0.65rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .footer-links a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .footer-links a:hover { text-decoration: underline; }
+    .err { color: #c43d5c; font-size: 0.9rem; }
+    .clar-shell { margin-top: 0.25rem; }
+    .clar-intro { margin-bottom: 0.75rem; line-height: 1.55; color: var(--text); }
+    .clar-hint {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.45;
+      margin: 0 0 0.75rem 0;
+      padding: 0.55rem 0.75rem;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.65);
+      border: 1px solid rgba(168, 205, 184, 0.55);
+    }
+    .clar-group { margin-bottom: 1rem; }
+    .clar-group-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 0.45rem;
+      font-weight: 600;
+    }
+    .clar-chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .clar-chip {
+      border: 1px solid rgba(168, 205, 184, 0.9);
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.8rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+    .clar-chip:hover { border-color: rgba(236, 122, 148, 0.55); box-shadow: 0 2px 8px rgba(26, 46, 40, 0.06); }
+    .clar-chip.selected {
+      background: linear-gradient(135deg, rgba(244, 168, 184, 0.45), rgba(236, 122, 148, 0.25));
+      border-color: rgba(236, 122, 148, 0.65);
+      color: var(--text);
+    }
+    .clar-chip:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .clar-chip.clar-chip-confirm {
+      padding: 0.55rem 1.35rem;
+      font-size: 0.88rem;
+    }
+    .clar-intro-wrap { margin-bottom: 0.45rem; }
+    .clar-intro-wrap p { margin: 0 0 0.4rem 0; line-height: 1.45; }
+    .clar-intro-wrap p:last-child { margin-bottom: 0; }
+    .clar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      align-items: center;
+    }
+    .clar-send-selected {
+      padding: 0.5rem 1.1rem;
+      border-radius: 999px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.82rem;
+      cursor: pointer;
+      background: linear-gradient(90deg, #f4a8b8, #ec7a94);
+      color: #fff;
+      font-family: inherit;
+      box-shadow: var(--shadow-soft);
+    }
+    .clar-send-selected:disabled { opacity: 0.45; cursor: not-allowed; }
+    .clar-clear {
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(168, 205, 184, 0.85);
+      color: var(--muted);
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .booking-next { margin-top: 1rem; }
+    .booking-portal-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0.55rem 1.15rem;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      text-decoration: none;
+      background: linear-gradient(90deg, #f4a8b8, #ec7a94);
+      color: #fff !important;
+      box-shadow: var(--shadow-soft);
+    }
+    .booking-portal-btn:hover { filter: brightness(1.05); }
+    .clar-yesno-hint {
+      margin-top: 0.75rem;
+      font-size: 0.82rem;
+      color: var(--accent);
+      font-weight: 600;
+      line-height: 1.45;
+    }
+    .auto-done {
+      border-left: 3px solid var(--success);
+      padding-left: 0.75rem;
+      margin: -0.25rem 0;
+    }
+    #demo-mode-banner {
+      display: none;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      padding: 0.55rem 1.25rem;
+      background: linear-gradient(90deg, rgba(244, 168, 184, 0.35), rgba(168, 205, 184, 0.4));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.65);
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: var(--text);
+    }
+    #demo-mode-banner.is-visible { display: flex; }
+    #demo-mode-banner strong { color: var(--accent-dim); }
+    #demo-mode-banner a {
+      color: var(--text);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    #demo-mode-banner button {
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.75);
+      background: rgba(255, 255, 255, 0.55);
+      color: var(--text);
+      cursor: pointer;
+    }
+    #demo-mode-banner button:hover { background: rgba(255, 255, 255, 0.85); }
+  </style>
+</head>
+<body>
+  <div id="demo-mode-banner" role="status" aria-live="polite">
+    <span>You’re exploring in <strong>demo mode</strong> — default preferences. <a href="/sign-up">Upgrade to a full account</a> anytime.</span>
+    <button type="button" id="demo-mode-dismiss">Dismiss</button>
+  </div>
+  <script>
+    (function () {
+      var banner = document.getElementById("demo-mode-banner");
+      var dismiss = document.getElementById("demo-mode-dismiss");
+      if (!banner || !dismiss) return;
+      var params = new URLSearchParams(window.location.search);
+      var demoParam = params.get("demo") === "1" || params.get("demo") === "true";
+      var fromStorage = false;
+      try {
+        fromStorage = localStorage.getItem("dinesmartai_guest") === "1";
+      } catch (e) {}
+      if (demoParam || fromStorage) {
+        banner.classList.add("is-visible");
+      }
+      dismiss.addEventListener("click", function () {
+        banner.classList.remove("is-visible");
+      });
+    })();
+  </script>
+  <header>
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">🍽</div>
+      <div>
+        <h1>DineSmartAI</h1>
+        <p>Your AI dining concierge</p>
+      </div>
+    </div>
+    <div class="loc-pill" id="loc-status">Finding your location…</div>
+  </header>
+
+  <main id="messages" aria-live="polite"></main>
+
+  <footer class="input-bar">
+    <div class="input-wrap">
+      <textarea id="user-input" rows="1" placeholder="Ask for food or type a custom time (e.g. 7:30 pm or 19:30) with your chip choices…" autocomplete="off"></textarea>
+      <button type="button" id="send" aria-label="Send">Send</button>
+    </div>
+    <p class="footer-links"><a href="/debug">Connection check</a> · <a href="/docs">API docs</a> · DineSmartAI</p>
+  </footer>
+
+  <script>
+    const messagesEl = document.getElementById("messages");
+    const inputEl = document.getElementById("user-input");
+    const sendBtn = document.getElementById("send");
+    const locStatus = document.getElementById("loc-status");
+
+    let lat = 37.6688;
+    let lng = -122.0808;
+    const DEFAULT_LABEL = "Hayward, CA (default)";
+
+    function userId() {
+      let id = localStorage.getItem("smartdine_user_id");
+      if (!id) {
+        id = "web_" + crypto.randomUUID().slice(0, 8);
+        localStorage.setItem("smartdine_user_id", id);
+      }
+      return id;
+    }
+
+    function escapeHtml(s) {
+      if (s == null) return "";
+      const d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function escapeAttr(s) {
+      if (s == null) return "";
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/"/g, "&quot;")
+        .replace(/</g, "&lt;")
+        .replace(/\n/g, " ");
+    }
+
+    function wireActionSuggestButtons(wrap) {
+      if (!wrap) return;
+      const bubble = wrap.querySelector(".bubble");
+      if (!bubble) return;
+      bubble.querySelectorAll(".action-suggest").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var reply = btn.getAttribute("data-reply") || "";
+          inputEl.value = reply;
+          inputEl.focus();
+        });
+      });
+    }
+
+    function appendMessage(role, html, isTyping = false) {
+      const wrap = document.createElement("div");
+      wrap.className = "msg " + role + (isTyping ? " typing" : "");
+      wrap.innerHTML =
+        '<span class="label">' + (role === "user" ? "You" : "DineSmartAI") + "</span>" +
+        '<div class="bubble">' + html + "</div>";
+      messagesEl.appendChild(wrap);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+      return wrap;
+    }
+
+    function removeTyping(node) {
+      if (node && node.parentNode) node.parentNode.removeChild(node);
+    }
+
+    var lastRecommendationId = null;
+
+    function formatDistanceMi(meters) {
+      if (meters == null || typeof meters !== "number" || isNaN(meters)) return "—";
+      var mi = meters / 1609.344;
+      var t = mi < 10 ? mi.toFixed(1) : String(Math.round(mi));
+      return t + " mi away";
+    }
+
+    function formatClarification(text) {
+      if (!text) return "";
+      var esc = escapeHtml(text);
+      var paras = esc.split("\n").map(function (line) {
+        var t = line.trim();
+        return t ? "<p>" + t + "</p>" : "";
+      }).join("");
+      return paras || "<p>" + esc + "</p>";
+    }
+
+    function renderStructuredRestaurantCard(pick, roleTitle, cardClass) {
+      const r = pick.restaurant || {};
+      const parts = [];
+      const cls = "rec-card" + (cardClass ? " " + cardClass : "");
+      parts.push("<div class='" + cls + "'>");
+      parts.push("<p class='rec-role'>" + escapeHtml(roleTitle) + "</p>");
+      parts.push("<h3>" + escapeHtml(r.name || "") + "</h3>");
+      parts.push("<ul class='rec-structured'>");
+      var cuisine = pick.cuisine_display;
+      if (!cuisine && r.cuisine_tags && r.cuisine_tags.length) cuisine = r.cuisine_tags.join(", ");
+      if (!cuisine) cuisine = "—";
+      parts.push("<li><span class='rec-k'>Cuisine</span> " + escapeHtml(cuisine) + "</li>");
+      if (r.rating != null) {
+        parts.push("<li><span class='rec-k'>Rating</span> ★ " + Number(r.rating).toFixed(1) + "</li>");
+      } else {
+        parts.push("<li><span class='rec-k'>Rating</span> —</li>");
+      }
+      var addrLine = pick.address_display || r.address || "";
+      if (!addrLine) addrLine = "Full address — open Navigate or Maps for the exact location.";
+      parts.push("<li><span class='rec-k'>Address</span> " + escapeHtml(addrLine) + "</li>");
+      var nbh = pick.neighborhood_display || "";
+      if (nbh) {
+        parts.push("<li><span class='rec-k'>Area</span> " + escapeHtml(nbh) + "</li>");
+      }
+      var dist = pick.distance_or_time_display;
+      if (!dist && r.distance_m != null && !isNaN(r.distance_m)) dist = formatDistanceMi(r.distance_m);
+      if (!dist) dist = "—";
+      if (pick.dish_match_display) {
+        parts.push("<li><span class='rec-k'>Dish match</span> " + escapeHtml(pick.dish_match_display) + "</li>");
+      }
+      parts.push("<li><span class='rec-k'>Distance / timing</span> " + escapeHtml(dist) + "</li>");
+      var hoursDisp = pick.opening_hours_display || "";
+      if (!hoursDisp && r.opening_hours_lines && r.opening_hours_lines.length) {
+        hoursDisp = (r.opening_hours_lines || []).slice(0, 5).join("\n");
+        if (r.opening_hours_lines.length > 5) hoursDisp += "\n…";
+      }
+      if (hoursDisp) {
+        var hoursHtml = escapeHtml(hoursDisp).split("\n").map(function (ln) {
+          var t = ln.trim();
+          return t ? "<span class='rec-hour-line'>" + t + "</span>" : "";
+        }).filter(Boolean).join("<br>");
+        parts.push("<li class='rec-hours-li'><span class='rec-k'>Hours</span> <span class='rec-hours'>" + hoursHtml + "</span></li>");
+      }
+      var price = pick.price_display;
+      if (price == null || price === "") {
+        price = r.price_level != null ? "$".repeat(Math.min(r.price_level, 4)) : "—";
+      }
+      parts.push("<li><span class='rec-k'>Price</span> " + escapeHtml(String(price)) + "</li>");
+      parts.push("<li><span class='rec-k'>Dietary fit</span> " + escapeHtml(pick.dietary_compatibility || "—") + "</li>");
+      parts.push("</ul>");
+      if (pick.location_cluster_note) {
+        parts.push("<p class='rec-loc-cluster'>" + escapeHtml(pick.location_cluster_note) + "</p>");
+      }
+      if (pick.highlights && pick.highlights.length) {
+        parts.push("<ul class='rec-highlights'>");
+        pick.highlights.forEach(function (h) {
+          if (h) parts.push("<li>" + escapeHtml(h) + "</li>");
+        });
+        parts.push("</ul>");
+      }
+      if (pick.why) {
+        parts.push("<p class='rec-why'><span class='rec-k'>Why this fits</span> " + escapeHtml(pick.why) + "</p>");
+      }
+      if (pick.next_actions && pick.next_actions.length) {
+        parts.push("<div class='actions'>");
+        pick.next_actions.forEach(function (a) {
+          if (a.url) {
+            parts.push("<a href='" + escapeHtml(a.url) + "' target='_blank' rel='noopener'>" + escapeHtml(a.label) + "</a>");
+          } else if (a.suggested_reply) {
+            parts.push(
+              "<button type='button' class='action-suggest' data-reply=\"" +
+                escapeAttr(a.suggested_reply) +
+                "\">" +
+                escapeHtml(a.label) +
+                "</button>"
+            );
+          }
+        });
+        parts.push("</div>");
+      }
+      parts.push("</div>");
+      return parts.join("");
+    }
+
+    function mountClarificationChips(bubbleEl, introText, groups) {
+      const shell = document.createElement("div");
+      shell.className = "clar-shell";
+      const clarGroupList = groups || [];
+      const allImmediateSubmit =
+        clarGroupList.length > 0 &&
+        clarGroupList.every(function (g) {
+          return g.immediate_submit === true;
+        });
+      const introWrap = document.createElement("div");
+      introWrap.className = "clar-intro-wrap";
+      introWrap.innerHTML = formatClarification(introText || "");
+      shell.appendChild(introWrap);
+
+      const selected = new Map();
+      const submitBtn = document.createElement("button");
+      submitBtn.type = "button";
+      submitBtn.className = "clar-send-selected";
+      submitBtn.textContent = "Send choices";
+      submitBtn.disabled = true;
+
+      function typedLooksLikeTime(t) {
+        if (!t) return false;
+        return (
+          /\b(\d{1,2})(?::\d{2})?\s*[ap]m\b/i.test(t) ||
+          /\b([01]?\d|2[0-3]):[0-5]\d\b/.test(t)
+        );
+      }
+
+      function syncSubmitState() {
+        const typed = (inputEl && inputEl.value ? inputEl.value : "").trim();
+        const hasTimeGroup = clarGroupList.some(function (g) {
+          return (g.title || "") === "Time";
+        });
+        const ok =
+          selected.size > 0 ||
+          (hasTimeGroup && typedLooksLikeTime(typed));
+        submitBtn.disabled = !ok;
+      }
+
+      function clearExclusiveGroup(title) {
+        shell.querySelectorAll(".clar-chip[data-group-title]").forEach(function (btn) {
+          if (btn.getAttribute("data-group-title") !== title) return;
+          const k = btn.getAttribute("data-chip-key");
+          btn.classList.remove("selected");
+          if (k) selected.delete(k);
+        });
+      }
+
+      const timeTitle = "Time";
+      let timeRowEl = null;
+      let timeOptionsByDate = null;
+      let timeGroupRef = null;
+
+      function rebuildTimeRow(dateVal) {
+        const gT = timeGroupRef;
+        if (!timeRowEl || !timeOptionsByDate || !gT) return;
+        const list = timeOptionsByDate[dateVal] || gT.chips || [];
+        const excl = !!gT.exclusive;
+        timeRowEl.innerHTML = "";
+        list.forEach(function (ch, ci) {
+          const key = timeTitle + "\0" + ci + "\0" + (ch.value || ch.label);
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "clar-chip";
+          b.textContent = ch.label || ch.value || "";
+          b.setAttribute("data-chip-key", key);
+          b.setAttribute("data-group-title", timeTitle);
+          b.addEventListener("click", function () {
+            if (excl) {
+              if (selected.has(key)) {
+                selected.delete(key);
+                b.classList.remove("selected");
+              } else {
+                clearExclusiveGroup(timeTitle);
+                selected.set(key, ch.value || ch.label || "");
+                b.classList.add("selected");
+              }
+            } else if (selected.has(key)) {
+              selected.delete(key);
+              b.classList.remove("selected");
+            } else {
+              selected.set(key, ch.value || ch.label || "");
+              b.classList.add("selected");
+            }
+            syncSubmitState();
+          });
+          timeRowEl.appendChild(b);
+        });
+        Array.from(selected.keys()).forEach(function (k) {
+          if (k.indexOf(timeTitle + "\0") === 0) selected.delete(k);
+        });
+        syncSubmitState();
+      }
+
+      clarGroupList.forEach(function (g) {
+        const block = document.createElement("div");
+        block.className = "clar-group";
+        const gt = document.createElement("div");
+        gt.className = "clar-group-title";
+        gt.textContent = g.title || "";
+        block.appendChild(gt);
+        const row = document.createElement("div");
+        row.className = "clar-chip-row";
+        const title = g.title || "";
+        const exclusive = !!g.exclusive;
+        const immediateSubmit = g.immediate_submit === true;
+        if (title === timeTitle && g.time_options_by_date && typeof g.time_options_by_date === "object") {
+          timeRowEl = row;
+          timeOptionsByDate = g.time_options_by_date;
+          timeGroupRef = g;
+        }
+        (g.chips || []).forEach(function (ch, ci) {
+          const key = title + "\0" + ci + "\0" + (ch.value || ch.label);
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = immediateSubmit ? "clar-chip clar-chip-confirm" : "clar-chip";
+          b.textContent = ch.label || ch.value || "";
+          b.setAttribute("data-chip-key", key);
+          b.setAttribute("data-group-title", title);
+          b.addEventListener("click", function () {
+            if (immediateSubmit) {
+              const val = (ch.value || ch.label || "").trim();
+              if (!val || b.disabled) return;
+              shell.querySelectorAll("button.clar-chip, button.clar-send-selected, button.clar-clear").forEach(function (btn) {
+                btn.disabled = true;
+              });
+              b.classList.add("selected");
+              submitRecommendQuery(val);
+              return;
+            }
+            if (exclusive) {
+              if (selected.has(key)) {
+                selected.delete(key);
+                b.classList.remove("selected");
+              } else {
+                clearExclusiveGroup(title);
+                selected.set(key, ch.value || ch.label || "");
+                b.classList.add("selected");
+              }
+            } else if (selected.has(key)) {
+              selected.delete(key);
+              b.classList.remove("selected");
+            } else {
+              selected.set(key, ch.value || ch.label || "");
+              b.classList.add("selected");
+            }
+            if (title === "Date" && exclusive && timeOptionsByDate && timeRowEl) {
+              rebuildTimeRow(ch.value || ch.label || "");
+            }
+            syncSubmitState();
+          });
+          row.appendChild(b);
+        });
+        block.appendChild(row);
+        shell.appendChild(block);
+      });
+
+      if (clarGroupList.some(function (g) { return (g.title || "") === "Time"; })) {
+        const hint = document.createElement("p");
+        hint.className = "clar-hint";
+        hint.textContent =
+          "Custom time: pick “Custom time”, type a time in the box below (12-hour like 7:30 pm or 24-hour like 19:30), optionally pick date and party chips, then Send choices.";
+        shell.appendChild(hint);
+      }
+
+      const onInputSync = function () {
+        syncSubmitState();
+      };
+      if (inputEl && !allImmediateSubmit) {
+        if (inputEl._dinesmartaiClarInputSync) {
+          inputEl.removeEventListener("input", inputEl._dinesmartaiClarInputSync);
+        }
+        inputEl._dinesmartaiClarInputSync = onInputSync;
+        inputEl.addEventListener("input", onInputSync);
+      }
+
+      if (!allImmediateSubmit) {
+        const actions = document.createElement("div");
+        actions.className = "clar-actions";
+        const clearBtn = document.createElement("button");
+        clearBtn.type = "button";
+        clearBtn.className = "clar-clear";
+        clearBtn.textContent = "Clear selection";
+        clearBtn.addEventListener("click", function () {
+          selected.clear();
+          shell.querySelectorAll(".clar-chip.selected").forEach(function (el) {
+            el.classList.remove("selected");
+          });
+          syncSubmitState();
+        });
+        submitBtn.addEventListener("click", async function () {
+          const parts = Array.from(selected.values()).filter(Boolean);
+          const typed = (inputEl && inputEl.value ? inputEl.value : "").trim();
+          let msg = parts.join(", ");
+          if (typed) {
+            msg = msg ? msg + ", " + typed : typed;
+          }
+          if (!msg) return;
+          submitBtn.disabled = true;
+          await submitRecommendQuery(msg);
+        });
+        actions.appendChild(submitBtn);
+        actions.appendChild(clearBtn);
+        shell.appendChild(actions);
+      }
+      bubbleEl.appendChild(shell);
+    }
+
+    function appendBotResponse(data) {
+      if (data.clarification && data.clarification_chip_groups && data.clarification_chip_groups.length) {
+        const wrap = appendMessage("bot", "");
+        const bubble = wrap.querySelector(".bubble");
+        mountClarificationChips(bubble, data.clarification, data.clarification_chip_groups);
+        return;
+      }
+      if (data.clarification) {
+        var chtml = formatClarification(data.clarification);
+        var clarPlain = (data.clarification || "").toLowerCase();
+        var clarAlreadyYesNo = /\byes\s+or\s+no\b/.test(clarPlain);
+        if (data.pending_automation_id && !clarAlreadyYesNo) {
+          chtml += "<p class='clar-yesno-hint'>Reply <strong>Yes</strong> or <strong>No</strong> to confirm. I won’t book or charge without a clear answer.</p>";
+        }
+        if (data.automation_completed === "completed") {
+          chtml = "<div class='auto-done'>" + chtml + "</div>";
+        }
+        if (data.booking_portal_url) {
+          chtml +=
+            "<p class='booking-next'><a class='booking-portal-btn' href='" +
+            escapeAttr(data.booking_portal_url) +
+            "' target='_blank' rel='noopener'>Open booking status</a>";
+          if (data.booking_confirmation_code) {
+            chtml +=
+              " <span style='font-size:0.8rem;color:var(--muted);margin-left:0.35rem'>Ref. " +
+              escapeHtml(data.booking_confirmation_code) +
+              "</span>";
+          }
+          chtml += "</p>";
+        }
+        appendMessage("bot", chtml);
+        return;
+      }
+      const recWrap = appendMessage("bot", formatRecommendation(data));
+      wireActionSuggestButtons(recWrap);
+    }
+
+    function formatRecommendation(data) {
+      if (data.clarification) {
+        return formatClarification(data.clarification);
+      }
+      const primary = data.primary;
+      if (!primary) {
+        return "<p class='err'>No picks this time. Try another cuisine or check your location.</p>";
+      }
+      const parts = [];
+      if (data.location_search_note) {
+        parts.push("<p class='rec-loc-note'>" + escapeHtml(data.location_search_note) + "</p>");
+      }
+      if (data.dish_search_note) {
+        parts.push("<p class='rec-dish-note'>" + escapeHtml(data.dish_search_note) + "</p>");
+      }
+      parts.push("<div class='rec-block'>");
+      parts.push(renderStructuredRestaurantCard(primary, "Best pick", ""));
+      if (data.alternates && data.alternates.length) {
+        data.alternates.forEach(function (alt, i) {
+          parts.push(renderStructuredRestaurantCard(alt, "Backup option " + (i + 1), "rec-card-alt"));
+        });
+      }
+      parts.push("</div>");
+      parts.push("<p class='rec-next-hint'>Want directions, a reservation, or to tweak these picks? Say what you’d like next.</p>");
+      if (data.recommendation_id) {
+        parts.push("<p style='font-size:0.7rem;color:var(--muted);margin-top:0.75rem'>Follow-up questions (e.g. “something else”) use this turn automatically. Feedback id: " +
+          escapeHtml(data.recommendation_id.slice(0, 8)) + "…</p>");
+      }
+      return parts.join("");
+    }
+
+    async function submitRecommendQuery(text) {
+      text = (text || "").trim();
+      if (!text) return;
+      appendMessage("user", "<p>" + escapeHtml(text) + "</p>");
+      sendBtn.disabled = true;
+      const typing = appendMessage("bot", "<span></span><span></span><span></span>", true);
+
+      try {
+        const payload = {
+          message: text,
+          latitude: lat,
+          longitude: lng,
+          user_id: userId(),
+        };
+        if (lastRecommendationId) {
+          payload.previous_recommendation_id = lastRecommendationId;
+        }
+        const res = await fetch("/v1/recommend", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        removeTyping(typing);
+        if (!res.ok) {
+          const errText = await res.text();
+          appendMessage("bot", "<p class='err'>Something went wrong (" + res.status + "). " + escapeHtml(errText.slice(0, 200)) + "</p>");
+          return;
+        }
+        const data = await res.json();
+        if (data.recommendation_id) {
+          lastRecommendationId = data.recommendation_id;
+        }
+        appendBotResponse(data);
+      } catch (e) {
+        removeTyping(typing);
+        appendMessage("bot", "<p class='err'>Network error. Is the server running?</p>");
+      } finally {
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    async function sendUserMessage() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+      inputEl.value = "";
+      await submitRecommendQuery(text);
+    }
+
+    sendBtn.addEventListener("click", sendUserMessage);
+    inputEl.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendUserMessage();
+      }
+    });
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          lat = pos.coords.latitude;
+          lng = pos.coords.longitude;
+          locStatus.innerHTML = "Using your <strong>GPS</strong> location";
+        },
+        function () {
+          locStatus.innerHTML = "Using <strong>" + DEFAULT_LABEL + "</strong> · enable location for “near me”";
+        },
+        { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+      );
+    } else {
+      locStatus.innerHTML = "Using <strong>" + DEFAULT_LABEL + "</strong>";
+    }
+
+    appendMessage(
+      "bot",
+      "<p>Hi — I’m DineSmartAI. Tell me what you’re in the mood for (cuisine, budget, dietary needs, dine-in or delivery), and I’ll suggest the best spot and a few backups.</p>" +
+      "<p style='margin-top:0.65rem;color:var(--muted);font-size:0.88rem'>If the picks aren’t right, say <em>something else</em> or <em>not those</em> — I’ll ask what to change (spice style, price, distance, vibe…) and find new options.</p>"
+    );
+    inputEl.focus();
+  </script>
+</body>
+</html>
