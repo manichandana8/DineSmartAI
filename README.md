@@ -9,7 +9,7 @@ DineSmartAI is an AI-powered dining assistant that helps users discover restaura
 From the project root (the folder containing `main.py`):
 
 ```bash
-source .venv/bin/activate   # optional
+source .venv/bin/activate   
 pip install -r requirements.txt
 python main.py
 ```
